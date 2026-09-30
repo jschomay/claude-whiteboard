@@ -1,0 +1,134 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Overlay Demo</title>
+<style>
+  body { font: 15px/1.5 system-ui, sans-serif; margin: 0; background: #fafafa; color: #222; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 16px 120px; }
+  section { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 16px 20px; margin: 20px 0; }
+  h2 { margin-top: 0; font-size: 18px; }
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+  button, input { font: inherit; padding: 4px 10px; }
+  .bars { display: flex; gap: 8px; align-items: flex-end; height: 180px; padding: 8px 0; }
+  .bar { flex: 1; background: #8da2fb; border-radius: 4px 4px 0 0; text-align: center; color: #fff;
+         font-weight: 600; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px;
+         transition: height .2s; }
+  .bar.key { background: #f76b15; }
+  .bar.sorted { background: #30a46c; }
+  .bar.cmp { outline: 3px solid #e5484d; }
+  .log { font: 13px ui-monospace, monospace; background: #f4f4f5; padding: 8px 12px; border-radius: 6px;
+         max-height: 220px; overflow: auto; }
+  .log div.now { background: #fff3c4; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { border-bottom: 1px solid #eee; padding: 6px 8px; text-align: left; }
+</style></head>
+<body><main>
+<h1>Insertion sort, step by step</h1>
+<p>A demo page for the whiteboard overlay: a stateful stepper plus plenty of content to scroll through.
+Draw on anything, then ask Claude about it.</p>
+
+<section data-wb="input">
+  <h2>Input</h2>
+  <div class="controls">
+    <label>Numbers: <input id="input" value="5 2 9 1 5 6 3" size="24"></label>
+    <button id="load">Load</button>
+    <label><input type="checkbox" id="desc"> Descending</label>
+  </div>
+</section>
+
+<section data-wb="stepper">
+  <h2>Stepper — <span id="stepLabel"></span></h2>
+  <div class="controls">
+    <button id="reset">⏮ Reset</button>
+    <button id="prev">◀ Prev</button>
+    <button id="next">Next ▶</button>
+    <button id="end">⏭ End</button>
+  </div>
+  <div class="bars" id="bars"></div>
+  <p id="explain" data-wb="step explanation"></p>
+</section>
+
+<section data-wb="trace log">
+  <h2>Trace log</h2>
+  <div class="log" id="log"></div>
+</section>
+
+<section data-wb="how it works">
+  <h2>How it works</h2>
+  <p>Insertion sort grows a sorted prefix one element at a time. It takes the next element (the
+  <b>key</b>) and shifts larger elements in the sorted prefix one place to the right until it finds
+  where the key belongs, then drops it in.</p>
+  <p>Each comparison and each shift is one step in the stepper above, so you can stop exactly where
+  something looks off and point at it.</p>
+</section>
+
+<section data-wb="complexity">
+  <h2>Complexity</h2>
+  <table>
+    <tr><th>Case</th><th>Comparisons</th><th>When</th></tr>
+    <tr data-wb="best case"><td>Best</td><td>O(n)</td><td>Already sorted</td></tr>
+    <tr data-wb="average case"><td>Average</td><td>O(n²)</td><td>Random order</td></tr>
+    <tr data-wb="worst case"><td>Worst</td><td>O(n²)</td><td>Reverse sorted</td></tr>
+  </table>
+</section>
+
+<section data-wb="notes">
+  <h2>Things to try</h2>
+  <ul>
+    <li>Step to the middle, circle the bar that looks wrong, and ask Claude why.</li>
+    <li>Toggle descending and compare the trace.</li>
+    <li>Leave a note on the complexity table.</li>
+    <li>Switch steps after marking: each mark remembers which step it was made on.</li>
+  </ul>
+</section>
+</main>
+
+<script>
+  // Precompute every state of the sort so the stepper can move both ways.
+  let frames = [], i = 0;
+  function build(nums, desc) {
+    const a = nums.slice(), out = [];
+    const before = (x, y) => desc ? x < y : x > y;
+    out.push({ a: a.slice(), sorted: 1, msg: 'Start. The first element alone is a sorted prefix.' });
+    for (let k = 1; k < a.length; k++) {
+      const key = a[k]; let j = k - 1;
+      out.push({ a: a.slice(), key: k, sorted: k, msg: `Pick key ${key} (index ${k}).` });
+      while (j >= 0 && before(a[j], key)) {
+        out.push({ a: a.slice(), key: j + 1, cmp: j, sorted: k, msg: `${a[j]} ${desc ? '<' : '>'} ${key}: shift ${a[j]} right.` });
+        a[j + 1] = a[j]; a[j] = key; j--;
+      }
+      out.push({ a: a.slice(), key: j + 1, cmp: j >= 0 ? j : undefined, sorted: k + 1,
+        msg: j >= 0 ? `${a[j]} ${desc ? '≥' : '≤'} ${key}: key stays at index ${j + 1}.` : `Key ${key} goes to the front.` });
+    }
+    out.push({ a: a.slice(), sorted: a.length, msg: 'Done.' });
+    return out;
+  }
+  function render() {
+    const f = frames[i], max = Math.max(...f.a, 1);
+    document.getElementById('stepLabel').textContent = `step ${i} of ${frames.length - 1}`;
+    document.getElementById('bars').innerHTML = f.a.map((v, idx) => {
+      const cls = ['bar', idx === f.key && 'key', idx < f.sorted && idx !== f.key && 'sorted', idx === f.cmp && 'cmp']
+        .filter(Boolean).join(' ');
+      return `<div class="${cls}" data-wb="bar ${idx} (value ${v})" style="height:${20 + 140 * v / max}px">${v}</div>`;
+    }).join('');
+    document.getElementById('explain').textContent = f.msg;
+    document.getElementById('log').innerHTML = frames.map((fr, n) =>
+      `<div class="${n === i ? 'now' : ''}">${String(n).padStart(2)}  ${fr.msg}</div>`).join('');
+  }
+  function load() {
+    const nums = document.getElementById('input').value.split(/[\s,]+/).filter(Boolean).map(Number);
+    frames = build(nums, document.getElementById('desc').checked); i = 0; render();
+  }
+  const go = n => { i = Math.max(0, Math.min(frames.length - 1, n)); render(); };
+  document.getElementById('load').onclick = load;
+  document.getElementById('desc').onchange = load;
+  document.getElementById('reset').onclick = () => go(0);
+  document.getElementById('prev').onclick = () => go(i - 1);
+  document.getElementById('next').onclick = () => go(i + 1);
+  document.getElementById('end').onclick = () => go(frames.length - 1);
+  load();
+</script>
+<script src="whiteboard.js"></script>
+<script>
+  whiteboard.pageState = () => ({ step: i, input: document.getElementById('input').value,
+    descending: document.getElementById('desc').checked });
+</script>
+</body></html>

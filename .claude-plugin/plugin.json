@@ -1,0 +1,8 @@
+{
+  "name": "whiteboard",
+  "description": "A shared whiteboard between you and Claude: Claude builds an interactive page that makes a concept or its own work visible, you draw, highlight, and comment on it, and Claude sees exactly what you marked",
+  "version": "0.1.0",
+  "author": {
+    "name": "Jeff Schomay"
+  }
+}

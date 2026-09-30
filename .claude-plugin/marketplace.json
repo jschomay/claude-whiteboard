@@ -1,0 +1,14 @@
+{
+  "name": "claude-whiteboard",
+  "description": "The whiteboard plugin for Claude Code",
+  "owner": {
+    "name": "Jeff Schomay"
+  },
+  "plugins": [
+    {
+      "name": "whiteboard",
+      "source": "./",
+      "description": "A shared whiteboard between you and Claude: draw, highlight, and comment on a page Claude builds, and Claude sees exactly what you marked"
+    }
+  ]
+}
