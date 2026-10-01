@@ -2,6 +2,8 @@
 
 A shared whiteboard between you and Claude.
 
+![A whiteboard page marked up with circles, arrows, and notes in several colors](docs/screenshot.jpg)
+
 Chat is a bad place to point at things. When a concept gets hard to follow, or Claude keeps
 iterating on something without seeing why it goes wrong, Claude builds an interactive page
 that makes it visible: a process exploded into steps, real data at each stage, whatever

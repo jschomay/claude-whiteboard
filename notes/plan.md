@@ -28,5 +28,5 @@ at where it goes wrong, fix, re-look at the same spot).
 - [x] cookbook (dropped)
 - [x] plugin manifest + single-plugin marketplace (validated; loads with --plugin-dir)
 - [x] README with install for terminal, desktop, VS Code (web not supported)
-- [ ] git repo + push to GitHub (README assumes jschomay/claude-whiteboard)
+- [x] git repo + push to GitHub (README assumes jschomay/claude-whiteboard)
 - [ ] triggers: collect real examples of when a whiteboard was reached for or wished for
